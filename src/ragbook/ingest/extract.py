@@ -4,16 +4,20 @@ import os
 import json
 
 
-def extract_chapter(pdf_path, config_path, chapter_key):
-    with open(config_path, 'r') as f:
+def extract_chapter(pdf_path, config_path, chapter_key, output_path=None):
+    with open(config_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    chapter_info = config['chapters'][chapter_key]
-    start_page = chapter_info['start_page'] - 1
-    end_page = chapter_info['end_page'] - 1
+    chapter_info = config["chapters"][chapter_key]
+    start_page = chapter_info["start_page"] - 1
+    end_page = chapter_info["end_page"] - 1
 
-    output_dir = f"data/processed/chapter_{chapter_info['id']:02d}"
-    os.makedirs(output_dir, exist_ok=True)
+    if output_path is None:
+        chapter_dir = f"data/processed/chapter_{chapter_info['id']:02d}"
+        os.makedirs(chapter_dir, exist_ok=True)
+        output_path = os.path.join(chapter_dir, "raw_extracted.json")
+    else:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     doc = pymupdf.open(pdf_path)
     raw_pages = []
@@ -23,9 +27,7 @@ def extract_chapter(pdf_path, config_path, chapter_key):
             break
 
         page = doc[page_num]
-
         text_blocks = page.get_text("blocks")
-
         images = page.get_images(full=True)
 
         raw_pages.append({
@@ -34,12 +36,11 @@ def extract_chapter(pdf_path, config_path, chapter_key):
             "image_count": len(images)
         })
 
-    output_file = os.path.join(output_dir, "raw_extraction.json")
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(raw_pages, f, indent=2, ensure_ascii=False)
 
     print(
-        f"Extraction complete! Saved raw data for {len(raw_pages)} pages to {output_file}")
+        f"Extraction complete! Saved raw data for {len(raw_pages)} pages to {output_path}")
 
 
 if __name__ == "__main__":

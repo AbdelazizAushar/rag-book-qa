@@ -1,6 +1,7 @@
 chapters:
   chapter_6:
     id: 6
-    title: "Data"
+    title: "Programming techniques"
     start_page: 96
     end_page: 116
+    output_dir: "data/processed/chapter_06"
