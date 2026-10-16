@@ -1,0 +1,10 @@
+pymupdf>=1.24
+sentence-transformers>=3.0
+faiss-cpu>=1.8
+rank-bm25>=0.2.2
+openai>=1.40
+gradio>=4.40
+pyyaml>=6.0
+python-dotenv>=1.0
+pytest>=8.0
+jupyter>=1.0
