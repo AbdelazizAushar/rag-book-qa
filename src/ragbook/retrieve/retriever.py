@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 
 
 class Retriever:
-    def __init__(self, index_dir="data/processed/chapter_06"):
+    def __init__(self, index_dir):
         self.index_dir = index_dir
         self.index_path = os.path.join(index_dir, "faiss_index.bin")
         self.metadata_path = os.path.join(index_dir, "metadata.json")
@@ -42,6 +42,6 @@ class Retriever:
 
 
 if __name__ == "__main__":
-    retriever = Retriever()
+    retriever = Retriever("data/processed/chapter_06")
     res = retriever.search("What is an array?")
     print(json.dumps(res, indent=2))

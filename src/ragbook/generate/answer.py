@@ -14,8 +14,8 @@ client = OpenAI(
 )
 
 class AnswerGenerator:
-    def __init__(self):
-        self.retriever = Retriever()
+    def __init__(self, index_dir):
+        self.retriever = Retriever(index_dir)
 
     def generate_answer(self, question):
         retrieved_chunks = self.retriever.search(question, top_k=3)
@@ -68,7 +68,7 @@ class AnswerGenerator:
                 time.sleep(2 ** attempt) 
 
 if __name__ == "__main__":
-    generator = AnswerGenerator()
+    generator = AnswerGenerator("data/processed/chapter_06")
     result = generator.generate_answer("What is an array?")
     print("\n--- Answer ---")
     print(result["answer"])

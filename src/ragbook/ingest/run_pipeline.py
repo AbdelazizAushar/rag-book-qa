@@ -1,14 +1,15 @@
-from ragbook.ingest.images import extract_and_link_images
-from ragbook.index.embed import build_index
-from ragbook.ingest.chunk import chunk_data
-from ragbook.ingest.clean import clean_extracted_data
-from ragbook.ingest.extract import extract_chapter
 import argparse
-import yaml
 import os
 import sys
 
 sys.path.append(os.path.abspath('src'))
+
+import yaml
+from ragbook.ingest.extract import extract_chapter
+from ragbook.ingest.clean import clean_extracted_data
+from ragbook.ingest.chunk import chunk_data
+from ragbook.index.embed import build_index
+from ragbook.ingest.images import extract_and_link_images
 
 
 def run_chapter_pipeline(pdf_path, config_path, chapter_key):

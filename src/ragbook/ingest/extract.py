@@ -27,9 +27,9 @@ def extract_chapter(pdf_path, config_path, chapter_key, output_path=None):
             break
 
         page = doc[page_num]
-        text_blocks = page.get_text("blocks")
+        text_blocks = page.get_text("blocks", sort=True)
         images = page.get_images(full=True)
-
+        
         raw_pages.append({
             "page_number": page_num + 1,
             "text_blocks": text_blocks,
