@@ -1,59 +1,77 @@
-from ragbook.generate.answer import AnswerGenerator
-import yaml
-import sys
+
+import argparse
 import os
+import sys
 
-sys.path.append(os.path.abspath('src'))
+import yaml
+
+sys.path.append(os.path.abspath("src"))
+
+from ragbook.retrieve.gate import GATE_THRESHOLD  
+from ragbook.retrieve.retriever import Retriever 
 
 
-def run_evaluation(yaml_path):
-    with open(yaml_path, 'r') as f:
-        data = yaml.safe_load(f)
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--chapter", default="chapter_6")
+    ap.add_argument("--config", default="config/chapters.yaml")
+    ap.add_argument("--questions", default="eval/questions.yaml")
+    ap.add_argument("--top-k", type=int, default=3)
+    ap.add_argument("--current-threshold", type=float, default=GATE_THRESHOLD)
+    args = ap.parse_args()
 
-    generator = AnswerGenerator()
-    total = len(data['questions'])
-    passed = 0
-    retrieval_hits = 0
+    with open(args.config, encoding="utf-8") as f:
+        info = yaml.safe_load(f)["chapters"][args.chapter]
+    with open(args.questions, encoding="utf-8") as f:
+        qs = yaml.safe_load(f)
 
-    print(f"Starting evaluation on {total} questions...\n")
+    retriever = Retriever(info["output_dir"])
 
-    for q in data['questions']:
-        print(f"Q: {q['question']}")
-        result = generator.generate_answer(q['question'])
+    ans_scores, un_scores, hits = [], [], 0
 
-        hit = False
-        if not q['expected_source_pages']:
-            hit = True
-        else:
-            for page in q['expected_source_pages']:
-                if page in result['sources']:
-                    hit = True
-                    break
-        if hit:
-            retrieval_hits += 1
+    print("\n=== ANSWERABLE (should be answered) ===")
+    for item in qs["answerable"]:
+        res = retriever.search(item["question"], top_k=args.top_k)
+        best = res[0]["score"]
+        pages = [c["page"] for c in res]
+        hit = any(p in item["expected_pages"] for p in pages)
+        hits += hit
+        ans_scores.append(best)
+        print(f"{'HIT ' if hit else 'MISS'} {best:.3f} pages={pages} "
+              f"expected={item['expected_pages']} | {item['question']}")
 
-        is_pass = False
-        if "unanswerable" in q['type'] or q['type'] == 'adversarial':
-            if "I can't find the answer to that" in result['answer']:
-                is_pass = True
-        else:
-            concepts_found = sum(
-                1 for c in q['expected_concepts'] if c.lower() in result['answer'].lower())
-            if concepts_found / len(q['expected_concepts']) >= 0.5:
-                is_pass = True
+    print("\n=== UNANSWERABLE (should be refused) ===")
+    for item in qs["unanswerable"]:
+        res = retriever.search(item["question"], top_k=args.top_k)
+        best = res[0]["score"]
+        un_scores.append(best)
+        layer = item.get("layer", "gate")
+        print(f"     {best:.3f} pages={[c['page'] for c in res]} "
+              f"[{layer}] | {item['question']}")
 
-        if is_pass:
-            passed += 1
+    total = len(ans_scores) + len(un_scores)
 
-        print(
-            f"Result: {'PASS' if is_pass else 'FAIL'} | Hit: {'YES' if hit else 'NO'}")
-        print("-" * 40)
+    def accuracy(t):
+        ok = sum(s <= t for s in ans_scores) + sum(s > t for s in un_scores)
+        return ok / total
 
-    print(f"\nEvaluation Complete!")
-    print(f"Overall Pass Rate: {passed}/{total} ({(passed/total)*100:.1f}%)")
-    print(
-        f"Retrieval Hit Rate: {retrieval_hits}/{total} ({(retrieval_hits/total)*100:.1f}%)")
+    scores = sorted(ans_scores + un_scores)
+    cands = [scores[0] - 0.01] + [(a + b) / 2 for a, b in zip(scores, scores[1:])] + [scores[-1] + 0.01]
+    best_acc = max(accuracy(t) for t in cands)
+    good = [t for t in cands if accuracy(t) == best_acc]
+    suggested = good[len(good) // 2]
+
+    print("\n=== SUMMARY ===")
+    print(f"Retrieval hit rate (answerable): {hits}/{len(ans_scores)}")
+    print(f"Answerable scores:   min {min(ans_scores):.3f}  max {max(ans_scores):.3f}")
+    print(f"Unanswerable scores: min {min(un_scores):.3f}  max {max(un_scores):.3f}")
+    print(f"Gate accuracy at configured threshold {args.current_threshold}: "
+          f"{accuracy(args.current_threshold):.0%}")
+    print(f"Best threshold found: {suggested:.3f}  (accuracy {best_acc:.0%})")
+    if max(ans_scores) >= min(un_scores):
+        print("NOTE: the two groups overlap, so no threshold separates them perfectly.")
+        print("      Near-topic questions are marked layer: model and are left to the LLM prompt.")
 
 
 if __name__ == "__main__":
-    run_evaluation("eval/questions.yaml")
+    main()

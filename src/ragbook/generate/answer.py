@@ -20,7 +20,7 @@ class AnswerGenerator:
     def generate_answer(self, question):
         retrieved_chunks = self.retriever.search(question, top_k=3)
 
-        is_relevant = check_relevance(retrieved_chunks, threshold=1.5)
+        is_relevant = check_relevance(retrieved_chunks)
         
         images = set()
         sources = set()
