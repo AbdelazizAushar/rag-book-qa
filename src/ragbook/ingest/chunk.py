@@ -11,11 +11,18 @@ def _n_words(text):
     return len(text.split())
 
 
+STOP_END = {"and", "or", "of", "the", "a", "an", "to", "in", "on", "for", "with",
+            "that", "is", "are", "as", "by", "at", "from", "it", "its", "this", "be"}
+
+
 def looks_like_heading(block):
+    words = block.split()
     return (
-        _n_words(block) <= MAX_HEADING_WORDS
-        and len(block) <= MAX_HEADING_CHARS
+        1 <= len(words) <= MAX_HEADING_WORDS
+        and 4 <= len(block) <= MAX_HEADING_CHARS
+        and block[0].isupper()
         and not re.search(r"[.;,:]$", block)
+        and words[-1].lower() not in STOP_END
     )
 
 
