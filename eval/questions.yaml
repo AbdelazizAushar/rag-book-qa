@@ -32,7 +32,7 @@ answerable:
   - question: "What is an IF-THEN-ELSE statement?"
     expected_pages: [110]
   - question: "What do the AND, OR and NOT operators do?"
-    expected_pages: [106, 107]
+    expected_pages: [107]
   - question: "What should I do when an error message appears?"
     expected_pages: [117]
 

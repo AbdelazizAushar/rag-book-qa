@@ -10,7 +10,7 @@ import pytest
 import yaml
 
 from ragbook.retrieve.gate import GATE_THRESHOLD, check_relevance
-from ragbook.retrieve.retriever import Retriever
+from ragbook.retrieve.retriever import TOP_K, Retriever
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CHAPTER = os.environ.get("CHAPTER", "chapter_6")
@@ -39,7 +39,7 @@ def retriever():
 
 
 def _search(retriever, question):
-    return retriever.search(question, top_k=3)
+    return retriever.search(question, top_k=TOP_K)
 
 
 @pytest.mark.parametrize("item", QS["answerable"], ids=_qid)

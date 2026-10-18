@@ -5,3 +5,4 @@ chapters:
     start_page: 98
     end_page: 117
     output_dir: data/processed/chapter_06
+    page_offset: 2

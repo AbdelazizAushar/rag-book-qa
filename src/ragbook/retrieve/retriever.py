@@ -4,6 +4,7 @@ import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+TOP_K = 5
 
 class Retriever:
     def __init__(self, index_dir):
@@ -25,7 +26,7 @@ class Retriever:
             raise FileNotFoundError(
                 f"Metadata not found at {self.metadata_path}")
 
-    def search(self, query, top_k=3):
+    def search(self, query, top_k=TOP_K):
         query_vector = self.model.encode([query])
         query_vector = np.array(query_vector).astype('float32')
 

@@ -8,7 +8,7 @@ import yaml
 sys.path.append(os.path.abspath("src"))
 
 from ragbook.retrieve.gate import GATE_THRESHOLD  
-from ragbook.retrieve.retriever import Retriever 
+from ragbook.retrieve.retriever import Retriever, TOP_K
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
     ap.add_argument("--chapter", default="chapter_6")
     ap.add_argument("--config", default="config/chapters.yaml")
     ap.add_argument("--questions", default="eval/questions.yaml")
-    ap.add_argument("--top-k", type=int, default=3)
+    ap.add_argument("--top-k", type=int, default=TOP_K)
     ap.add_argument("--current-threshold", type=float, default=GATE_THRESHOLD)
     args = ap.parse_args()
 

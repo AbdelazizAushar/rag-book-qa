@@ -6,52 +6,54 @@ import yaml
 
 sys.path.append(os.path.abspath("src"))
 
-from ragbook.generate.answer import AnswerGenerator  # noqa: E402
+from ragbook.generate.answer import AnswerGenerator 
 
 CHAPTER = os.environ.get("CHAPTER", "chapter_6")
 
 with open("config/chapters.yaml", "r", encoding="utf-8") as f:
-    info = yaml.safe_load(f)["chapters"][CHAPTER]
+    INFO = yaml.safe_load(f)["chapters"][CHAPTER]
 
-OUTPUT_DIR = info["output_dir"]
+OUTPUT_DIR = INFO["output_dir"]
 IMAGES_DIR = os.path.join(OUTPUT_DIR, "images")
 
-# Built once at startup so the model and index are not reloaded per question.
-generator = AnswerGenerator(OUTPUT_DIR)
+generator = AnswerGenerator(OUTPUT_DIR, INFO.get("page_offset", 0))
+
+STATUS_LABELS = {
+    "answered": "✅ Answered from the book",
+    "refused_by_gate": "🚫 Refused: nothing relevant found in the chapter",
+    "refused_by_model": "🚫 Refused: the retrieved passages do not answer the question",
+    "error": "⚠️ Error",
+}
 
 
 def process_query(question):
     if not question or not question.strip():
-        return "Please type a question first.", [], "No question asked."
+        return "Please type a question first.", [], "No question asked.", ""
 
-    try:
-        result = generator.generate_answer(question.strip())
-    except Exception as e:
-        return f"Something went wrong: {e}", [], "No chunks retrieved."
-
-    answer_text = result.get("answer", "Error generating answer.")
+    result = generator.generate_answer(question.strip())
 
     chunks_display = ""
-    for idx, chunk in enumerate(result.get("chunks", [])):
+    for idx, chunk in enumerate(result["chunks"], 1):
         chunks_display += (
-            f"**Chunk {idx + 1} | Page {chunk['page']} | "
-            f"{chunk.get('heading', '')} | Score: {chunk.get('score', 0):.4f}**\n\n"
-            f"{chunk['text']}\n\n---\n\n"
+            f"**Chunk {idx} | Book page {chunk['printed_page']} "
+            f"(PDF page {chunk['page']}) | {chunk.get('heading', '')} | "
+            f"Distance: {chunk['score']:.4f}**\n\n{chunk['text']}\n\n---\n\n"
         )
     if not chunks_display:
-        chunks_display = "No relevant chunks retrieved."
+        chunks_display = "No chunks retrieved."
 
     image_files = []
-    for img_path in result.get("images", []):
+    for img_path in result["images"]:
         full_path = os.path.join(IMAGES_DIR, os.path.basename(img_path))
         if os.path.exists(full_path):
             image_files.append(full_path)
 
-    return answer_text, image_files, chunks_display
+    status = STATUS_LABELS.get(result["status"], result["status"])
+    return result["answer"], image_files, chunks_display, status
 
 
-with gr.Blocks(title=f"Chapter {info['id']} RAG Q&A", theme=gr.themes.Soft()) as demo:
-    gr.Markdown(f"# 📖 Children's Book Q&A - Chapter {info['id']} ({info['title']})")
+with gr.Blocks(title=f"Chapter {INFO['id']} RAG Q&A", theme=gr.themes.Soft()) as demo:
+    gr.Markdown(f"# 📖 Children's Book Q&A - Chapter {INFO['id']} ({INFO['title']})")
 
     with gr.Row():
         with gr.Column(scale=2):
@@ -60,6 +62,8 @@ with gr.Blocks(title=f"Chapter {info['id']} RAG Q&A", theme=gr.themes.Soft()) as
                 placeholder="e.g., What is an array?",
             )
             submit_btn = gr.Button("Ask", variant="primary")
+
+    status_output = gr.Markdown()
 
     with gr.Row():
         with gr.Column(scale=2):
@@ -72,7 +76,7 @@ with gr.Blocks(title=f"Chapter {info['id']} RAG Q&A", theme=gr.themes.Soft()) as
     with gr.Accordion("🔍 Retrieved Context & Scores (Evaluator View)", open=False):
         chunks_output = gr.Markdown()
 
-    outputs = [answer_output, image_output, chunks_output]
+    outputs = [answer_output, image_output, chunks_output, status_output]
     submit_btn.click(fn=process_query, inputs=[question_input], outputs=outputs)
     question_input.submit(fn=process_query, inputs=[question_input], outputs=outputs)
 
