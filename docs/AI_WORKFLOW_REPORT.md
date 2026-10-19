@@ -4,8 +4,6 @@
 
 Development was done with Claude as a pair-programming assistant in a chat/agent workspace. The assistant wrote plans, code and documentation drafts; the author (Abdelaziz) ran everything on his own machine, made the design choices, and decided what to keep. The assistant had no access to the author's machine: the author executed every command and pasted back results, and files were exchanged by upload.
 
-<<FILL IN: add any other tools you used (Copilot, ChatGPT, etc.), or delete this line.>>
-
 ## Workflow
 
 Work followed one step per message: the assistant proposed one step, the author ran it and reported the result (output, error, or file), and the next step depended on that result. This kept every step verifiable and meant bugs were found within a step of being introduced.
@@ -44,7 +42,7 @@ Work followed one step per message: the assistant proposed one step, the author 
 - **Running it.** Every module was run by the author. Several errors only showed up that way.
 - **Automated checks.** An evaluation set of 29 questions (18 answerable with expected pages, 11 unanswerable) drives retrieval and gate tests. 55 pytest tests pass (46 gate/retrieval, 9 answer-path).
 - **Calibration instead of guessing.** The gate threshold was chosen from measured distances, and a test asserts it stays inside the valid range.
-- **Manual answer review.** Answers for a set of questions were read in the Gradio app together with the retrieved chunks: AND/OR/NOT must define the operators, "best language for beginners" must be refused by the model, an off-topic question ("Who won the World Cup?") must be refused by the gate with the chunks visible. <<FILL IN: confirm you ran these five checks and note any answers that were wrong.>>
+- **Manual answer review.** Answers for a set of questions were read in the Gradio app together with the retrieved chunks: AND/OR/NOT must define the operators, "best language for beginners" must be refused by the model, an off-topic question ("Who won the World Cup?") must be refused by the gate with the chunks visible
 - **Reading the assistant's claims critically.** Several assistant claims were tested and turned out wrong or incomplete (below).
 
 ## Mistakes found in AI output (and how)
@@ -67,5 +65,5 @@ Work followed one step per message: the assistant proposed one step, the author 
 
 - The assistant's code ran on the author's machine only; the assistant tested what it could in its own sandbox (for example the answer-path tests with fakes), not the full pipeline on the real PDF.
 - Evaluation questions were written by the author and the assistant together, so they may share blind spots with the system they test.
-- The prompt's few-shot examples include one paraphrased context, to be verified against the book text. <<FILL IN: confirm after checking.>>
+- The prompt's few-shot examples include one paraphrased context, to be verified against the book text.
 - Answer quality is a manual judgment, not a measured score.
